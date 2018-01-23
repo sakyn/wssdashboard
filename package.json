@@ -1,0 +1,16 @@
+{
+  "name": "WSS-TEST",
+  "version": "1.0.0",
+  "description": "WSS test for CT",
+  "author": "Jiří Sakáč <jiri.sakac@ceskatelevize.cz>",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.16.2",
+    "lodash": "^4.17.4",
+    "socket.io": "^2.0.3",
+    "socket.io-client": "^2.0.4"
+  }
+}

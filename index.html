@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>(--) WSS Dashboard"</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.1/socket.io.js"></script>
+	<link href="/css/bootstrap-reboot.css" rel="stylesheet">
+	<link href="/css/bootstrap-grid.css" rel="stylesheet">
+	<link href="/css/bootstrap.css" rel="stylesheet">
+	<link href="/css/controlfrog.css" rel="stylesheet" media="screen">
+	<link href="/css/jquery.range.css" rel="stylesheet" media="screen">
+	<link href="/css/rangeslider.css" rel="stylesheet" media="screen">
+	<script src="/js/jquery-1.9.1.min.js"></script>
+	<script src="/js/moment.js"></script>
+	<script src="/js/easypiechart.js"></script>
+	<script src="/js/gauge.js"></script>
+	<script src="/js/chart.js"></script>
+	<script src="/js/jquery.sparklines.js"></script>
+	<script src="/js/jquery.range-min.js"></script>
+	<script src="/js/rangeslider.js"></script>
+	<script src="/js/bootstrap.js"></script>
+	<script src="/js/controlfrog-plugins.js"></script>
+	<script src="/js/knockout.js"></script>
+	<script>
+		var themeColour = 'black';
+	</script>
+	<script src="./js/controlfrog.js"></script>
+	<script src="./js/custom.js"></script>
+
+	<style type="text/css">.jqstooltip {
+		position: absolute;
+		left: 0px;
+		top: 0px;
+		visibility: hidden;
+		background: rgb(0, 0, 0) transparent;
+		background-color: rgba(0, 0, 0, 0.6);
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
+		-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
+		color: white;
+		font: 10px arial, san serif;
+		text-align: left;
+		white-space: nowrap;
+		padding: 5px;
+		border: 1px solid white;
+		z-index: 10000;
+	}
+
+	.jqsfield {
+		color: white;
+		font: 10px arial, san serif;
+		text-align: left;
+	}</style>
+</head>
+<body class="black">
+
+<div class="cf-nav cf-nav-state-min">
+	<a href="#" class="cf-nav-toggle" title="Rozbalit nastavení">
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+	</a>
+
+	<div class="set-item">
+		<h4 class="cf-nav-max">Počet spojení per client</h4>
+		<span class="slidecontainer">
+		  <input type="range" min="1" max="50" value="1" class="slider" id="cpc" data-bind="value: clientConnections, valueUpdate: 'input', event: { change: changeProps }, attr: formAttr()">
+		</span>
+		<div class="s-val" data-bind="text: clientConnections">1</div>
+	</div>
+
+	<div class="set-item">
+		<h4 class="cf-nav-max">Frekvence dat</h4>
+		<span class="slidecontainer">
+		  <input type="range" min="100" max="2000" value="1000" step="100" class="slider2" id="frd" data-bind="value: messageFreq, valueUpdate: 'input', event: { change: changeProps }, attr: formAttr()">
+		</span>
+		<div class="s-val"><span data-bind="text: messageFreq">2000</span><span class="cf-nav-max">ms</span></div>
+	</div>
+
+	<br><br><br>
+	<div class="set-item">
+		<div class="cf-nav-max"><button class="btn btn-block btn-danger disconn" data-bind="click: killKenny, attr: formAttr()">ODPOJIT VŠECHNY</button></div>
+	</div>
+	<div class="set-item text-center">
+		<img class="cf-nav-max logo-right" src="https://smartmania.cz/wp-content/uploads/2017/02/Ceska_televize.png?x49849">
+	</div>
+</div>
+
+<style>
+	.slidecontainer {
+		width: 100%; /* Width of the outside container */
+		padding-top: 50px;
+		position: relative;
+	}
+
+	/* The slider itself */
+	.slider, .slider2 {
+		-webkit-appearance: none;  /* Override default CSS styles */
+		appearance: none;
+		width: 100%; /* Full-width */
+		height: 25px; /* Specified height */
+		background: #d3d3d3; /* Grey background */
+		outline: none; /* Remove outline */
+		opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+		-webkit-transition: .2s; /* 0.2 seconds transition on hover */
+		transition: opacity .2s;
+	}
+
+	/* Mouse-over effects */
+	.slider:hover, .slider2:hover {
+		opacity: 1; /* Fully shown on mouse-over */
+	}
+
+	/* The slider handle (use webkit (Chrome, Opera, Safari, Edge) and moz (Firefox) to override default look) */
+	.slider::-webkit-slider-thumb, .slider2::-webkit-slider-thumb {
+		-webkit-appearance: none; /* Override default look */
+		appearance: none;
+		width: 45px; /* Set a specific slider handle width */
+		height: 25px; /* Slider handle height */
+		background: #66ce39; /* Green background */
+		cursor: pointer; /* Cursor on hover */
+	}
+
+	.slider::-moz-range-thumb, .slider2::-moz-range-thumb {
+		width: 25px; /* Set a specific slider handle width */
+		height: 25px; /* Slider handle height */
+		background: #66ce39; /* Green background */
+		cursor: pointer; /* Cursor on hover */
+	}
+
+	.slider2::-webkit-slider-thumb {
+		background: #e89640;
+	}
+
+	.slider2::-moz-range-thumb {
+		background: #e89640;
+	}
+</style>
+
+<div class="cf-container cf-nav-active">
+
+	<div class="row">
+		<div class="col-sm-6 cf-item" style="height: 923px;">
+			<div class="inner">
+				<header>
+					<p><span></span>WebSocket server instance [<strong data-bind="text: instances().length"></strong>] (Celkem: <b class="text" data-bind="text: totalClients"></b> spojení) <i class="pull-right margr">Odbaveno <b data-bind="text: eventsCount"></b> eventů</i></p>
+				</header>
+				<div class="content cf-rss">
+					<div id="cf-rss-1" >
+						<div class="carousel-inner" data-bind="foreach: instances">
+							<div class="iteme">
+								<span data-bind="text: instanceId"></span>
+								<span class="esid" data-bind="html: '<small>(<img src=\'https://cdn3.iconfinder.com/data/icons/drifting/USB-Connection.png\' width=\'14\'> ' + totalClients + ' wss spolení</small>)'"></span>
+								<span class="eip metric-smaller" data-bind="html: '<b>' + eventsCount + '</b> eventů'"></span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div> <!-- //end inner -->
+
+		</div> <!-- //end col -->
+		<div class="col-sm-6 cf-item" style="height: 922px;">
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="row">
+						<div class="col-sm-6 cf-item" style="height: 446px;">
+							<header>
+								<p><span></span>Otevřených spojení</p>
+							</header>
+							<div class="content">
+								<div class="cf-svmc-sparkline">
+									<div class="cf-svmc">
+										<div class="metric" data-bind="text: totalClients">--</div>
+										<div data-bind="css: statsCss()[0]">
+											<div data-bind="css: statsCss()[1]"></div>
+											<span class="large"><span class="small" data-bind="text: totalClients() - statsMean()"></span></span>
+										</div>
+									</div>
+									<div class="cf-sparkline clearfix">
+										<div id="spark-1" class="sparkline">
+											<canvas width="372" height="184" style="display: inline-block; width: 372px; height: 184px; vertical-align: top;"></canvas>
+										</div>
+										<div class="sparkline-value" style="height: 184px;">
+											<div class="metric-small"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div> <!-- //end cf-item -->
+						<div class="col-sm-6 cf-item" style="height: 447px;">
+							<header>
+								<p><span></span>Statistika připojení</p>
+							</header>
+							<div class="content">
+								<div id="cf-rag-1" class="cf-rag">
+									<div class="cf-bars">
+										<ul>
+											<li style="height: 2%">
+												<div class="cf-bars-bara m-red mb"></div>
+											</li>
+											<li style="height: 18%">
+												<div class="cf-bars-bar m-amber mb"></div>
+											</li>
+											<li style="height: 80%">
+												<div class="cf-bars-bar m-green mb"></div>
+											</li>
+										</ul>
+									</div>
+									<div class="cf-figs ">
+										<ul>
+											<li>
+												<div class="cf-figs-fig m-red"><p></p></div>
+											</li>
+											<li>
+												<div class="cf-figs-fig m-amber"><p></p></div>
+											</li>
+											<li>
+												<div class="cf-figs-fig m-green"><p></p></div>
+											</li>
+										</ul>
+									</div>
+									<div class="cf-txts ">
+										<ul>
+											<li>
+												<div class="cf-txts-txt m-red"><p>Chyby</p></div>
+											</li>
+											<li>
+												<div class="cf-txts-txt m-amber"><p>Long-polling</p></div>
+											</li>
+											<li>
+												<div class="cf-txts-txt m-green"><p>WebSockets</p></div>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						</div> <!-- //end cf-item -->
+					</div> <!-- //end row -->
+					<div class="row">
+						<div class="col-sm-6 cf-item" style="height: 446px;">
+							<div class="row">
+								<div class="col-sm-8 cf-item" style="height: 287px;">
+									<header>
+										<p><span></span>Připojeno</p>
+									</header>
+									<div class="content">
+										<div class="cf-yn">
+											<div class="metric" data-bind="text: conn_server() ? 'ANO' : 'NE', css: conn_server() ? 'm-green' : 'm-red'"></div>
+										</div>
+									</div>
+
+								</div> <!-- //end cf-item -->
+								<div class="col-sm-4 cf-item" style="height: 287px;">
+									<header>
+										<p><span></span>Komunikace</p>
+									</header>
+									<div class="content">
+										<div class="cf-yn yn-y">
+											<div class="metric m-red">
+												<span id="comm" data-bind="css: working() ? 'active' : ''"></span>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-sm-12 cf-item" style="height: 288px;">
+									<header>
+										<p><span></span>Poslední aktualizace</p>
+									</header>
+									<div class="content">
+										<div class="cf-td">
+											<!-- <div class="cf-td cf-td-12">-->
+											<div class="cf-td-time metric-x" data-bind="text: last_change()"></div>
+											<div class="cf-td-dd">
+												<p class="cf-td-day metric-small">Pondělí, 22.1 2018</p>
+											</div>
+										</div>
+									</div>
+								</div> <!-- //end cf-item -->
+								 <!-- //end cf-item -->
+							</div> <!-- // end row -->
+						</div> <!-- //end cf-item -->
+						<div class="col-sm-6 cf-item" style="height: 447px;">
+							<header>
+								<p><span></span>Limit spojení (500 K)</p>
+							</header>
+							<div class="content cf-svp clearfix" id="svp-1">
+								<div class="chart" data-layout="l-3">
+									<canvas height="347" width="347"></canvas>
+								</div>
+								<div class="metrics">
+									<span class="metric">0</span>
+									<span class="metric-small">%</span>
+								</div>
+							</div>
+						</div> <!-- //end cf-item -->
+					</div> <!-- //end row -->
+				</div> <!-- //end col -->
+			</div> <!-- //end row -->
+		</div> <!-- //end col -->
+	</div>
+	<div class="row">
+		<div class="col-sm-6 logo text-center">
+			<img src="https://imgct.ceskatelevize.cz/global/images/logo-ceskatelevize-full.png?_ts=1366977075">
+		</div>
+	</div>
+</div> <!-- //end container -->
+
+
+</body>
+</html>
